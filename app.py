@@ -1,141 +1,115 @@
 import streamlit as st
-import requests
-import streamlit.components.v1 as components
-import random
+import time
 
 # Настройка страницы
-st.set_page_config(page_title="ReviewBoss | ИИ-Мониторинг", page_icon="🌍", layout="centered")
+st.set_page_config(
+    page_title="ReviewBoss | Turn Reviews into Sales",
+    page_icon="✨",
+    layout="centered"
+)
 
-CORRECT_PASSWORD = "admin"
+# Функция-заглушка для генерации ответа (сюда вставляется твой API-запрос)
+def generate_review_reply(review_text, tone):
+    # Имитируем реальную логику копирайтера без упоминания ИИ
+    replies = {
+        "Friendly": f"Hi there! Thank you so much for the feedback. We are thrilled you enjoyed it! Looking forward to your next visit! ✨",
+        "Professional": f"Thank you for taking the time to share your experience. Your feedback is highly appreciated and helps us maintain our high standards. Best regards, Management.",
+        "Witty": f"Wow, you just made our day! Thanks for the awesome words. We promise to keep being this awesome next time too! 😎"
+    }
+    # Имитация задержки генерации текста
+    time.sleep(1.5)
+    return replies.get(tone, replies["Friendly"])
 
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+# --- 1. HERO SECTION ---
+st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>Turn Maps Reviews into Loyal Customers. In 1 Click. No VPN.</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #4B5563;'>Generate charismatic, high-converting brand replies for Google Maps, Yelp, and TripAdvisor in 3 seconds.</h3>", unsafe_allow_html=True)
 
-if not st.session_state["authenticated"]:
-    st.title("🔒 Вход в личный кабинет")
-    user_password = st.text_input("Введите ваш персональный пароль доступа:", type="password")
-    
-    if st.button("Войти", use_container_width=True):
-        if user_password == CORRECT_PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("❌ Неверный пароль! Доступ заблокирован.")
+st.write("---")
+
+# --- 2. INTERACTIVE GENERATOR ---
+st.markdown("### ✍️ Test the Smart Reply Generator")
+st.write("Pick a real client review or type your own to see how it instantly transforms into a charismatic copy:")
+
+# Готовые пресеты для демонстрации клиенту
+preset_reviews = {
+    "Custom Text (Type below)": "",
+    "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
+    "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
+}
+
+selected_preset = st.selectbox("Choose a sample review:", list(preset_reviews.keys()))
+
+# Поле ввода текста
+if selected_preset != "Custom Text (Type below)":
+    review_input = st.text_area("Client Review Text:", value=preset_reviews[selected_preset], height=100)
 else:
-    if st.sidebar.button("🚪 Выйти из кабинета"):
-        st.session_state["authenticated"] = False
-        st.rerun()
+    review_input = st.text_area("Client Review Text:", placeholder="Paste your client's review here...", height=100)
 
-    st.title("🌍 ReviewBoss — Харизматичный ИИ для Ваших Карт")
-    st.write("Автоматический поиск отзывов и генерация ответов (Яндекс, Google, Tripadvisor)")
+# Выбор тональности бренда
+tone_choice = st.radio(
+    "Select your Brand Tone of Voice:",
+    ["Friendly", "Professional", "Witty"],
+    horizontal=True
+)
 
-    st.markdown("---")
-    st.subheader("🔍 Сканирование карт")
+# Логика генерации текста
+if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
+    if not review_input.strip():
+        st.warning("Please enter or select a review first!")
+    else:
+        with st.spinner("Crafting your charismatic response..."):
+            result_text = generate_review_reply(review_input, tone_choice)
+        
+        st.success("Done! Your brand response is ready to copy:")
+        st.code(result_text, language="text")
+        st.info("💡 Pro Tip: Fast and engaging replies like this boost your Google Maps local SEO ranking instantly.")
 
-    platform = st.selectbox(
-        "📍 Выберите платформу для проверки:",
-        ("Яндекс Карты", "Google Карты (Google Maps)", "Tripadvisor")
-    )
+st.write("---")
 
-    place_url = st.text_input("🔗 Вставьте ссылку на карточку вашей компании:", placeholder="https://yandex.ru...")
+# --- 3. THE PROBLEM & WHY US ---
+col1, col2 = st.columns(2)
 
-    if st.button("🚀 Найти новые отзывы и подготовить ответы", use_container_width=True):
-        if not place_url.strip():
-            st.warning("⚠️ Пожалуйста, вставьте ссылку на ваше заведение!")
-        else:
-            with st.spinner(f"⏳ Анализируем карточку {platform} и подтягиваем отзывы..."):
-                try:
-                    # УМНОЕ АВТООПРЕДЕЛЕНИЕ ТЕМАТИКИ ПО ССЫЛКЕ
-                    url_lower = place_url.lower()
-                    
-                    if "flamen" in url_lower or "bakery" in url_lower or "cake" in url_lower:
-                        # Если ссылка на кондитерскую/выпечку
-                        real_reviews = [
-                            {"author": "Марина С.", "rating": 5, "text": "Потрясающие эклеры и безумно вкусный наполеон! Кофе тоже отличный, персонал очень милый."},
-                            {"author": "Артем Д.", "rating": 2, "text": "Торт оказался заветренным, крем сухой. За такую цену ожидал свежую выпечку."}
-                        ]
-                        business_type = "кондитерской"
-                    elif "acha" in url_lower or "cafe" in url_lower or "rest" in url_lower:
-                        # Если ссылка на грузинское кафе/ресторан
-                        real_reviews = [
-                            {"author": "Татьяна М.", "rating": 5, "text": "Потрясающая грузинская кухня! Хинкали просто тают во рту, а хачапури по-аджарски — это шедевр."},
-                            {"author": "Дмитрий В.", "rating": 3, "text": "Еда вкусная, но очень шумно в пятницу вечером. Долго ждали счет."}
-                        ]
-                        business_type = "ресторана"
-                    else:
-                        # Базовый вариант (универсальный общепит/бизнес)
-                        real_reviews = [
-                            {"author": "Алексей К.", "rating": 5, "text": "Отличный сервис, вежливый персонал, всё сделали быстро и качественно! Рекомендую."},
-                            {"author": "Ольга Н.", "rating": 2, "text": "Менеджер хамил, на вопросы отвечать не хотел. Больше сюда не приду."}
-                        ]
-                        business_type = "компании"
-                    
-                    st.info(f"✅ Успешно загружено свежих отзывов для {business_type}: {len(real_reviews)}")
-                    
-                    for i, r in enumerate(real_reviews):
-                        st.markdown("---")
-                        st.subheader(f"💬 Отзыв №{i+1} от {r['author']} ({'⭐' * r['rating']})")
-                        st.write(f"*{r['text']}*")
-                        
-                        prompt = f"""Ты — харизматичный, остроумный владелец бизнеса ({business_type}). Ответь на отзыв гостя живым, разговорным языком с добавлением классного тонкого юмора и самоиронии.
-                        Никаких шаблонов! Пиши разговорным стилем. Отвечай строго на языке отзыва.
-                        Если отзыв содержит критику — извинись с юмором и пообещай исправить. Если отзыв хвалит — бурно обрадуйся и пошути.
-                        
-                        Отзыв от {r['author']}: "{r['text']}"
-                        Твой уникальный ответ:"""
-                        
-                        url = "https://hf.space"
-                        ai_reply = ""
-                        try:
-                            res = requests.post(url, json={"data": [prompt, "", 0.85, 0.9]}, timeout=15)
-                            if res.status_code == 200:
-                                ai_reply = res.json()['data'].strip()
-                        except:
-                            pass
-                            
-                        # Умные и смешные ответы под каждую тематику
-                        if not ai_reply or len(ai_reply) < 10:
-                            if "эклеры" in r['text'].lower() or "торт" in r['text'].lower():
-                                if r['rating'] <= 3:
-                                    ai_reply = f"Ох, {r['author']}, приношу свои сладкие извинения... 😔 Похоже, наш торт решил закосить под сухарь, а крем устроил забастовку. Это абсолютно недопустимо! Уже устроил кондитерам на кухне серьезный разбор полетов с метанием венчиков. Заходите снова, мы приготовим для вас самый свежий и нежный десерт за наш счет!"
-                                else:
-                                    ai_reply = f"Марина С., огромное спасибо! Наш кондитер, прочитав ваш отзыв, от радости чуть не упал в чан с шоколадом, а торты в витрине стали выглядеть еще аппетитнее! 🍫 Всегда ждем вас за порцией эндорфинов и свежими эклерами!"
-                            elif "хинкали" in r['text'].lower() or "хачапури" in r['text'].lower():
-                                if r['rating'] <= 3:
-                                    ai_reply = f"Привет, {r['author']}! Простите, что в пятницу у нас было шумно, как на восточном базаре, а счет добирался до вас кружными путями... 🏃‍♂️ Курьерам по выдаче чеков уже выдали по паре гоночных кед для скорости. Забегайте проверять новые скорости!"
-                                else:
-                                    ai_reply = f"Генацвале {r['author']}, вах, спасибо за такие слова! Наши повара крутят хинкали со скоростью света, а хачапури в печи румянятся от гордости за ваш отзыв! Ждем снова! 🇬🇪"
-                            else:
-                                if r['rating'] <= 3:
-                                    ai_reply = f"{r['author']}, примите извинения за этот инцидент. Менеджер, который вам хамил, уже отправлен на курсы экстремальной вежливости, а его внутренний робот-грубиян полностью отключен. 🤖 Приходите снова, встретим вас как родного!"
-                                else:
-                                    ai_reply = f"Спасибо за доверие, {r['author']}! Наша команда от вашей похвалы работает еще быстрее и качественнее. Ждем вас в гости снова!"
+with col1:
+    st.markdown("#### 💔 The Routine Dragging You Down")
+    st.markdown("- **Wasting hours** staring at a blank screen trying to find words.")
+    st.markdown("- **Losing local rankings** due to slow or ignored customer feedback.")
+    st.markdown("- **Sounding dry and boring** like a rigid corporate machine.")
 
-                        st.success("📝 Рекомендуемый ИИ-ответ (с юмором):")
-                        st.text_area(f"Ответ для {r['author']}:", value=ai_reply, height=150, key=f"reply_{i}_{random.randint(1,1000)}")
-                        
-                        clean_reply = ai_reply.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
-                        
-                        button_html = f"""
-                        <div style="font-family: sans-serif;">
-                            <button onclick="copyToClipboard()" style="width: 100%; background-color: #24a0ed; color: white; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                                📋 Скопировать ответ для {r['author']}
-                            </button>
-                            <p id="status_{i}" style="color: #4CAF50; font-size: 12px; text-align: center; margin-top: 5px; display: none; font-weight: bold;">✓ Текст успешно скопирован!</p>
-                        </div>
-                        <script>
-                        function copyToClipboard() {{
-                            const text = "{clean_reply}";
-                            navigator.clipboard.writeText(text).then(() => {{
-                                document.getElementById("status_{i}").style.display = "block";
-                                setTimeout(() => {{ document.getElementById("status_{i}").style.display = "none"; }}, 2000);
-                            }}).catch(err => {{
-                                alert('Ошибка копирования: ' + err);
-                            }});
-                        }}
-                        </script>
-                        """
-                        components.html(button_html, height=70)
-                        
-                except Exception as e:
-                    st.error(f"❌ Системная ошибка скрипта: {e}")
+with col2:
+    st.markdown("#### 🔥 Why Local Businesses Love ReviewBoss")
+    st.markdown("- **Charismatic Copywriting:** Scripts instantly adapt to your specific business vibe.")
+    st.markdown("- **No VPN Required:** Runs lightning-fast and stable from anywhere in the world.")
+    st.markdown("- **Google Search Boost:** Consistent text updates signal activity to search algorithms.")
+
+st.write("---")
+
+# --- 4. PRICING ---
+st.markdown("<h3 style='text-align: center;'>Simple, Transparent Pricing</h3>", unsafe_allow_html=True)
+
+p_col1, p_col2, p_col3 = st.columns(3)
+
+with p_col1:
+    st.subheader("Free Trial")
+    st.markdown("## $0")
+    st.write("• 10 free text generations")
+    st.write("• Core writing styles")
+    st.button("Start Free", key="btn_free", use_container_width=True)
+
+with p_col2:
+    st.subheader("Starter")
+    st.markdown("## $29/mo")
+    st.write("• Up to 200 ready replies")
+    st.write("• All writing styles")
+    st.button("Get Starter", key="btn_starter", use_container_width=True)
+
+with p_col3:
+    st.subheader("Business")
+    st.markdown("## $79/mo")
+    st.write("• Unlimited generations")
+    st.write("• Custom brand setup")
+    st.button("Get Business", key="btn_biz", type="primary", use_container_width=True)
+
+st.write("---")
+
+# --- 5. FOOTER ---
+st.markdown("<p style='text-align: center; color: #9CA3AF;'>No credit card required for trial. Setup takes 30 seconds. ReviewBoss 2026.</p>", unsafe_allow_html=True)
