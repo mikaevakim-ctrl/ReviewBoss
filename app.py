@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import json
 import time
+from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_RECENT
 
 # --- НАСТРОЙКА СТРАНИЦЫ ---
 st.set_page_config(
@@ -49,7 +50,7 @@ setInterval(createDroplet, 600);
 """
 st.components.v1.html(animation_html, height=0, width=0)
 
-# --- УМНЫЙ ДВИЖОК КОПИРАЙТИНГА ---
+# --- УМНЫЙ ДВИЖОК КОПИРАЙТИНГА С ИНТЕГРАЦИЕЙ YOUTUBE ---
 def generate_response(text_input, tone, platform_type):
     api_key = st.secrets.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY")
     url = "https://openrouter.ai"
@@ -59,6 +60,25 @@ def generate_response(text_input, tone, platform_type):
         "Content-Type": "application/json"
     }
     
+    target_text = text_input.strip()
+    
+    # АВТО-ПАРСЕР: Если пользователь вставил ссылку на YouTube вместо текста
+    if "://youtube.com" in target_text or "youtu.be/" in target_text:
+        try:
+            downloader = YoutubeCommentDownloader()
+            # Скачиваем самый свежий комментарий под этим видео
+            comments = downloader.get_comments_from_url(target_text, sort_by=SORT_BY_RECENT)
+            first_comment = next(comments, None)
+            
+            if first_comment and 'text' in first_comment:
+                target_text = first_comment['text']
+                st.toast(f"📥 Fetched latest comment: \"{target_text[:40]}...\"")
+            else:
+                return "Error: No public comments found on this YouTube video."
+        except Exception:
+            return "Error: Could not extract comments from this URL. Check video permissions."
+
+    # Выбор системной инструкции под нужную платформу
     if platform_type == "Google Maps / Yelp / TripAdvisor":
         system_instruction = (
             f"You are the elite head of communications and brand reputation for a top-tier business. "
@@ -88,33 +108,21 @@ def generate_response(text_input, tone, platform_type):
         "model": "meta-llama/llama-3-8b-instruct:free",
         "messages": [
             {"role": "system", "content": system_instruction},
-            {"role": "user", "content": f"Target text to reply to: '{text_input}'"}
+            {"role": "user", "content": f"Target text to reply to: '{target_text}'"}
         ]
     }
     
     if api_key == "YOUR_OPENROUTER_API_KEY":
         time.sleep(1.5)
-        if platform_type == "Google Maps / Yelp / TripAdvisor":
-            replies = {
-                "Friendly": "Hi there! Thank you so much for the feedback. We are thrilled you enjoyed your experience! ✨",
-                "Professional": "Thank you for taking the time to share your experience. Your feedback helps us maintain our high standards. Best regards.",
-                "Witty": "Wow, you just made our day! Thanks for the awesome words. We promise to keep being this awesome next time too! 😎"
-            }
-        else:
-            replies = {
-                "Friendly": "Thanks for watching and dropping a comment! So glad you liked the video. Big things are coming in the next episode! 🙌🔥",
-                "Professional": "Appreciate your analytical feedback on this topic. I structure my content based on viewer insights like yours. Stay tuned.",
-                "Witty": "Haha, eagle eye! Glad you caught that moment in the video. Thanks for riding along with the channel! 🚀"
-            }
-        return replies.get(tone, replies["Friendly"])
+        return f"[DEMO MODE] Charismatic {tone} response to the comment: \"{target_text}\""
         
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=12)
+        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
         if response.status_code == 200:
             result = response.json()
             return result['choices']['message']['content'].strip()
         else:
-            return f"System notice: Temporary high load. Output generated in fallback mode."
+            return f"System notice: Temporary high load. Status code {response.status_code}."
     except Exception:
         return "Connection timeout. Please click the button again."
 # --- 1. ПЕРВЫЙ ЭКРАН (HERO SECTION) ---
@@ -153,6 +161,7 @@ with p_col3:
         st.button("Get Pro", key="btn_biz", type="primary", use_container_width=True)
 
 st.write("---")
+
 # --- 3. ИНТЕРАКТИВНЫЙ МУЛЬТИПЛАТФОРМЕННЫЙ ГЕНЕРАТОР ---
 st.markdown("### ✍️ Test the Multi-Platform Generator")
 
@@ -166,24 +175,24 @@ st.write("")
 
 if platform == "Google Maps / Yelp / TripAdvisor":
     preset_reviews = {
-        "Custom Text (Type below)": "",
+        "Custom Text / Video URL (Type below)": "",
         "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
         "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
     }
 else:
     preset_reviews = {
-        "Custom Text (Type below)": "",
+        "Custom Text / Video URL (Type below)": "",
         "🔥 Fan Praise Comment": "Man, this video editing is next level! Thanks for making this tutorial, it helped me so much with my project.",
         "🧐 Critical Comment": "The info is good but you talked too fast in the middle section. Had to slow down the playback to get it."
     }
 
 selected_preset = st.selectbox("Choose a sample input:", list(preset_reviews.keys()))
 
-if selected_preset != "Custom Text (Type below)":
-    text_input = st.text_area("Source Text to Reply to:", value=preset_reviews[selected_preset], height=100)
+if selected_preset != "Custom Text / Video URL (Type below)":
+    text_input = st.text_area("Source Text or YouTube URL to Reply to:", value=preset_reviews[selected_preset], height=100)
 else:
-    placeholder_text = "Paste maps review here..." if platform == "Google Maps / Yelp / TripAdvisor" else "Paste YouTube comment here..."
-    text_input = st.text_area("Source Text to Reply to:", placeholder=placeholder_text, height=100)
+    placeholder_text = "Paste maps review here..." if platform == "Google Maps / Yelp / TripAdvisor" else "Paste YouTube Video Link OR plain comment text here..."
+    text_input = st.text_area("Source Text or YouTube URL to Reply to:", placeholder=placeholder_text, height=100)
 
 tone_choice = st.radio(
     "Select your Vibe / Tone of Voice:",
@@ -193,7 +202,7 @@ tone_choice = st.radio(
 
 if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
     if not text_input.strip():
-        st.warning("Please enter or select some text first!")
+        st.warning("Please enter or select some text/URL first!")
     else:
         with st.spinner("Crafting your charismatic response..."):
             result_text = generate_response(text_input, tone_choice, platform)
@@ -207,6 +216,7 @@ if st.button("Generate Smart Reply ✨", type="primary", use_container_width=Tru
             st.info("💡 Pro Tip: Replying within 15 minutes triggers YouTube's algorithm to pump your video to more feeds.")
 
 st.write("---")
+
 # --- 4. БЛОК БОЛИ И ПРЕИМУЩЕСТВ ---
 col1, col2 = st.columns(2)
 
