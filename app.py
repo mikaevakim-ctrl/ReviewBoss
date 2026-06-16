@@ -3,23 +3,19 @@ import requests
 import json
 import time
 
-# --- НАСТРОЙКА СТРАНИЦЫ (Премиальный детский стиль) ---
+# --- НАСТРОЙКА СТРАНИЦЫ ---
 st.set_page_config(
     page_title="MagicTales | Personalized Therapy Stories",
     page_icon="🔮",
     layout="centered"
 )
 
-# Изменяем стиль шрифтов и кнопок, чтобы сайт выглядел как дорогая книга
+# Премиальный уютный стиль детской книги
 st.markdown("""
 <style>
-    .stApp {
-        background-color: #FAFAFC;
-    }
-    h1, h2, h3 {
-        font-family: 'Cozy', 'Comic Sans MS', sans-serif !important;
-    }
-    div.stButton > button:first-child {
+    .stApp { background-color: #FAFAFC; }
+    h1, h2, h3 { font-family: 'Cozy', 'Comic Sans MS', sans-serif !important; }
+    div.stButton > button {
         background-color: #6366F1 !important;
         color: white !important;
         border-radius: 20px !important;
@@ -31,8 +27,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- АНИМАЦИЯ ПАДАЮЩИХ ВОЛШЕБНЫХ ЗВЕЗД (Мягкая, не отвлекает от чтения) ---
-animation_html = """
+# Волшебная анимация падающих звезд на фоне
+st.components.v1.html("""
 <div id="magic-canvas" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:-1; overflow:hidden; background: transparent;"></div>
 <script>
 const container = document.getElementById('magic-canvas');
@@ -52,32 +48,18 @@ function createStar() {
 }
 setInterval(createStar, 800);
 </script>
-"""
-st.components.v1.html(animation_html, height=0, width=0)
+""", height=0, width=0)
 
-# --- БЕСПЛАТНЫЙ ДВИЖОК ГЕНЕРАЦИИ СКАЗОК ---
+# Бесплатная генерация сказки
 def generate_magic_story(child_name, child_age, setting, challenge):
     api_key = st.secrets.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY")
     url = "https://openrouter.ai"
     
-    # Режим авто-генерации (заглушка), если ключ не подключен
-    if api_key == "YOUR_OPENROUTER_API_KEY" or len(api_key) < 10:
-        time.sleep(1.2)
-        return (
-            f"✨ **Давным-давно, в одном удивительном месте под названием {setting}...** ✨\n\n"
-            f"Жил-был очень смелый и добрый ребёнок, которого звали **{child_name}**. Ему было ровно {child_age} лет. "
-            f"{child_name} больше всего на свете любил исследовать мир вокруг, но иногда он сталкивался с небольшой трудностью: *{challenge.lower()}*.\n\n"
-            f"Однажды вечером, маленькая волшебная фея прилетела к его окошку, присела на край подушки и прошептала: "
-            f"«{child_name}, вся самая сильная магия уже находится внутри твоего доброго сердца! Ты гораздо сильнее и смелее, чем тебе кажется».\n\n"
-            f"С той самой ночи {child_name} сладко засыпал с улыбкой на лице, зная, что со всеми трудностями он обязательно справится. Конец волшебной сказки. 🌙"
-        )
-        
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
-    # Профессиональная инструкция для детского психолога-сказочника
     system_instruction = (
         "You are a compassionate child psychologist and a master storyteller for kids. "
         "Your goal is to write a warm, beautifully structured therapeutic bedtime story based on the user's inputs. "
@@ -85,16 +67,10 @@ def generate_magic_story(child_name, child_age, setting, challenge):
         "Rules:\n"
         "1. Never use technical, AI, or corporate words. Sound 100% like a loving human writer.\n"
         "2. Make the child the main character who gracefully learns a lesson or overcomes a fear through a gentle metaphor.\n"
-        "3. The story must feel deeply safe, cozy, comforting, and have a beautiful happy ending.\n"
-        "4. Keep it concise but magical (approx. 250-400 words), ideal for reading aloud before bed."
+        "3. Keep it concise but magical (approx. 250-450 words), ideal for reading aloud before bed."
     )
     
-    user_content = (
-        f"Write a cozy bedtime story for a child named {child_name}, age {child_age}. "
-        f"The story takes place in: {setting}. "
-        f"The theme to gently guide the child through is: {challenge}."
-    )
-    
+    user_content = f"Write a cozy bedtime story for a child named {child_name}, age {child_age}. Setting: {setting}. Challenge: {challenge}."
     data = {
         "model": "google/gemini-2.5-flash:free",
         "messages": [
@@ -109,59 +85,77 @@ def generate_magic_story(child_name, child_age, setting, challenge):
             result = response.json()
             return result['choices']['message']['content'].strip()
         else:
-            return "Ой, волшебная книга закрылась от сильного ветра. Пожалуйста, нажмите кнопку создания еще раз! 🪄"
+            return "Ошибка магии. Пожалуйста, попробуйте еще раз! 🪄"
     except Exception:
-        return "Сказочная пыль еще укладывается. Пожалуйста, попробуйте нажать кнопку еще один раз!"
-# --- 1. КРАСИВЫЙ ЗАГОЛОВОК САЙТА ---
+        return "Сказочная пыль еще укладывается. Пожалуйста, попробуйте еще раз!"
+# Инициализация состояния оплаты
+if "payment_done" not in st.session_state:
+    st.session_state.payment_done = False
+
+# --- 1. ЗАГОЛОВОК САЙТА ---
 st.markdown("<h1 style='text-align: center; color: #4F46E5; margin-bottom: 0;'>🔮 MagicTales</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #4B5563; font-size: 18px; margin-top: 5px;'>Создайте уникальную терапевтическую сказку для вашего малыша</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #4B5563; font-size: 18px; margin-top: 5px;'>Именные терапевтические сказки для вашего малыша</p>", unsafe_allow_html=True)
 
 st.write("")
 
-# --- 2. ПРОСТАЯ И ПОНЯТНАЯ ФОРМА ВВОДА ---
-# Оборачиваем форму в рамку, чтобы она смотрелась аккуратно
+# --- 2. ФОРМА ЗАКАЗА СКАЗКИ ---
 with st.container(border=True):
-    st.markdown("##### 📝 Заполните всего 4 простых поля:")
-    
+    st.markdown("##### 📝 Заполните данные для создания сказки:")
     child_name = st.text_input("Как зовут вашего ребёнка?", placeholder="Например: Лео, София, Максим", max_chars=20)
-    
     child_age = st.slider("Сколько лет вашему малышу?", min_value=2, max_value=10, value=5)
-    
     setting = st.selectbox(
         "Где будет происходить действие сказки?",
         ["В затерянном волшебном лесу", "На далекой космической станции", "В секретном подводном королевстве", "В уютном замке на мягком облаке", "В долине добрых динозавров"]
     )
-    
     challenge = st.selectbox(
         "Какую тему или каприз мы хотим мягко решить?",
-        [
-            "Боязнь темноты и ночных монстров", 
-            "Нежелание ложиться спать вовремя", 
-            "Неумение делиться своими игрушками", 
-            "Сложная адаптация и страх перед детским садиком",
-            "Частые вспышки злости, обиды или капризы"
-        ]
+        ["Боязнь темноты и ночных монстров", "Нежелание ложиться спать вовремя", "Неумение делиться своими игрушками", "Сложная адаптация и страх перед детским садиком", "Частые вспышки злости, обиды или капризы"]
     )
+    
+    st.write("---")
+    # Маркетинговый блок с динамической ценой
+    is_first_time = st.checkbox("✨ Это моя первая сказка на сайте (Получить скидку)", value=True)
+    price = 190 if is_first_time else 290
 
 st.write("")
 
-# Кнопка запуска
-if st.button("Создать волшебную сказку ✨", use_container_width=True):
-    if not child_name.strip():
-        st.warning("Пожалуйста, введите имя вашего ребёнка, чтобы сказка получилась персональной!")
-    else:
-        with st.spinner("Собираем волшебную пыль и пишем вашу сказку..."):
-            story_result = generate_magic_story(child_name, child_age, setting, challenge)
+# --- 3. ПЛАТЕЖНЫЙ ЭКРАН И ГЕНЕРАЦИЯ ---
+if not st.session_state.payment_done:
+    # Блок до оплаты
+    st.markdown(f"<h4 style='text-align: center;'>Стоимость создания сказки: <b style='color:#6366F1;'>{price} ₽</b></h4>", unsafe_allow_html=True)
+    st.write("Нажмите кнопку ниже, чтобы перейти к быстрой оплате. После оплаты ваша персональная сказка откроется автоматически!")
+    
+    # Ссылка на оплату (СБП, ЮMoney, перевод). Сюда ты вставишь свою бесплатную платежную ссылку.
+    st.markdown("<a href='https://your-payment-link.com' target='_blank'><button style='width:100%; background-color:#22C55E; color:white; border-radius:20px; padding:12px; font-size:18px; font-weight:bold; border:none; cursor:pointer;'>💳 Перейти к оплате</button></a>", unsafe_allow_html=True)
+    
+    st.write("")
+    st.write("📋 *После завершения перевода нажмите кнопку ниже для мгновенной генерации:*")
+    
+    if st.button("✅ Я оплатил(а), открыть сказку", use_container_width=True):
+        if not child_name.strip():
+            st.warning("Пожалуйста, сначала заполните имя ребёнка в форме выше!")
+        else:
+            st.session_state.payment_done = True
+            st.rerun()
+
+else:
+    # Блок после подтверждения оплаты
+    with st.spinner("💳 Оплата зафиксирована! Пишем уникальную сказку для вашего малыша..."):
+        story_result = generate_magic_story(child_name, child_age, setting, challenge)
+    
+    st.write("---")
+    st.markdown(f"### 📖 Персональная история для {child_name}:")
+    
+    with st.container(border=True):
+        st.markdown(story_result)
         
-        st.write("---")
-        st.markdown(f"### 📖 Ваша персональная история для {child_name}:")
-        
-        # Выводим сказку в красивом, чистом текстовом блоке без программного кода
-        with st.container(border=True):
-            st.markdown(story_result)
-            
-        st.write("")
-        st.success("✨ Готово! Прочитайте эту сказку вашему ребёнку сегодня перед сном спокойным, мягким голосом.")
+    st.write("")
+    st.success("✨ Сказка успешно создана! Прочитайте её ребёнку перед сном мягким, спокойным голосом.")
+    
+    # Сброс для нового платного заказа
+    if st.button("🪄 Заказать еще одну сказку", use_container_width=True):
+        st.session_state.payment_done = False
+        st.rerun()
 
 st.write("---")
-st.markdown("<p style='text-align: center; color: #9CA3AF; font-size: 12px;'>MagicTales 2026. Сделано с любовью для заботливых родителей.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9CA3AF; font-size: 12px;'>MagicTales 2026. Конфиденциально и безопасно для родителей.</p>", unsafe_allow_html=True)
