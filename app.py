@@ -3,228 +3,165 @@ import requests
 import json
 import time
 
-# --- НАСТРОЙКА СТРАНИЦЫ ---
+# --- НАСТРОЙКА СТРАНИЦЫ (Премиальный детский стиль) ---
 st.set_page_config(
-    page_title="ReviewBoss | Scale Your Audience",
-    page_icon="✨",
+    page_title="MagicTales | Personalized Therapy Stories",
+    page_icon="🔮",
     layout="centered"
 )
 
-# --- АНИМАЦИЯ ПАДАЮЩИХ ИКОНОК НА ЗАДНЕМ ФОНЕ ---
-animation_html = """
-<div id="snow-container" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:-1; overflow:hidden; background: transparent;"></div>
-<script>
-const container = document.getElementById('snow-container');
-const emojis = ['⭐️', '💬', '✨', '👍', '❤️', '🎬', '🍿', '🔥', '🌟', '🚀'];
+# Изменяем стиль шрифтов и кнопок, чтобы сайт выглядел как дорогая книга
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #FAFAFC;
+    }
+    h1, h2, h3 {
+        font-family: 'Cozy', 'Comic Sans MS', sans-serif !important;
+    }
+    div.stButton > button:first-child {
+        background-color: #6366F1 !important;
+        color: white !important;
+        border-radius: 20px !important;
+        border: none !important;
+        font-size: 18px !important;
+        padding: 10px 20px !important;
+        font-weight: bold !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-function createDroplet() {
-    const droplet = document.createElement('div');
-    droplet.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-    droplet.style.position = 'absolute';
-    droplet.style.top = '-50px';
-    droplet.style.left = Math.random() * 100 + 'vw';
-    
-    const size = Math.random() * 20 + 15;
-    const duration = Math.random() * 8 + 5; 
-    const opacity = Math.random() * 0.35 + 0.1;
-    
-    droplet.style.fontSize = size + 'px';
-    droplet.style.transition = `transform ${duration}s linear, opacity ${duration}s linear`;
-    droplet.style.opacity = opacity;
-    
-    container.appendChild(droplet);
-    
+# --- АНИМАЦИЯ ПАДАЮЩИХ ВОЛШЕБНЫХ ЗВЕЗД (Мягкая, не отвлекает от чтения) ---
+animation_html = """
+<div id="magic-canvas" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:-1; overflow:hidden; background: transparent;"></div>
+<script>
+const container = document.getElementById('magic-canvas');
+const stars = ['✨', '🌙', '🌟', '🧸', '🦄'];
+function createStar() {
+    const star = document.createElement('div');
+    star.innerText = stars[Math.floor(Math.random() * stars.length)];
+    star.style.position = 'absolute'; star.style.top = '-50px'; star.style.left = Math.random() * 100 + 'vw';
+    const size = Math.random() * 15 + 12; const duration = Math.random() * 10 + 7; const opacity = Math.random() * 0.25 + 0.05;
+    star.style.fontSize = size + 'px'; star.style.transition = `transform ${duration}s linear, opacity ${duration}s linear`; star.style.opacity = opacity;
+    container.appendChild(star);
     setTimeout(() => {
-        const drift = (Math.random() * 100 - 50);
-        droplet.style.transform = `translateY(110vh) translateX(${drift}px) rotate(${Math.random() * 360}deg)`;
-        droplet.style.opacity = '0';
+        star.style.transform = `translateY(110vh) translateX(${(Math.random() * 60 - 30)}px) rotate(${Math.random() * 360}deg)`;
+        star.style.opacity = '0';
     }, 100);
-    
-    setTimeout(() => {
-        droplet.remove();
-    }, duration * 1000 + 100);
+    setTimeout(() => { star.remove(); }, duration * 1000 + 100);
 }
-setInterval(createDroplet, 600);
+setInterval(createStar, 800);
 </script>
 """
 st.components.v1.html(animation_html, height=0, width=0)
 
-# --- УМНЫЙ ДВИЖОК КОПИРАЙТИНГА ---
-def generate_response(text_input, tone, platform_type):
+# --- БЕСПЛАТНЫЙ ДВИЖОК ГЕНЕРАЦИИ СКАЗОК ---
+def generate_magic_story(child_name, child_age, setting, challenge):
     api_key = st.secrets.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY")
     url = "https://openrouter.ai"
     
-    target_text = text_input.strip()
-    
-    # Защита от ввода ссылок
-    if "http://" in target_text or "https://" in target_text or "www." in target_text:
-        return "⚠️ Please paste the plain text of the review or comment. Direct links are restricted due to platform firewalls."
-
-    # Функция авто-ответа, если ключ не сработал (чтобы сайт никогда не выдавал ошибку)
-    def get_fallback_reply(platform, tone_style):
-        if platform == "Google Maps / Yelp / TripAdvisor":
-            replies = {
-                "Friendly": "Thank you so much for your wonderful feedback! We are absolutely thrilled to hear you enjoyed your time with us, our spacious seating, and the overall atmosphere. We always love welcoming great guests and look forward to seeing you again soon! ✨🥞",
-                "Professional": "Thank you for taking the time to share your detailed feedback regarding your recent visit. We highly appreciate your positive comments about our layout, spacious seating capacity, and terminal availability. Your satisfaction remains our highest priority. Best regards, Management.",
-                "Witty": "Wow, you just found our favorite spot! Thanks for the awesome shoutout about our cozy chairs and tech-friendly setup. We promise to keep the vibe just as amazing for your next visit! 😎🚀"
-            }
-        else:
-            replies = {
-                "Friendly": "Thanks for watching and dropping such an awesome comment! So glad the video helped you out. Big things are coming in the next episode, so stay tuned! 🙌🔥",
-                "Professional": "Appreciate your analytical feedback on this topic. I structure all my video content based on viewer insights like yours. Thank you for supporting the channel.",
-                "Witty": "Haha, eagle eye! Glad you caught that exact moment in the video. Thanks for riding along with the channel, you rock! 🚀"
-            }
-        return replies.get(tone_style, replies["Friendly"])
-
-    # Если токен не настроен или некорректен, мгновенно отдаем готовый текст без ожидания
+    # Режим авто-генерации (заглушка), если ключ не подключен
     if api_key == "YOUR_OPENROUTER_API_KEY" or len(api_key) < 10:
-        time.sleep(0.8)
-        return get_fallback_reply(platform_type, tone)
+        time.sleep(1.2)
+        return (
+            f"✨ **Давным-давно, в одном удивительном месте под названием {setting}...** ✨\n\n"
+            f"Жил-был очень смелый и добрый ребёнок, которого звали **{child_name}**. Ему было ровно {child_age} лет. "
+            f"{child_name} больше всего на свете любил исследовать мир вокруг, но иногда он сталкивался с небольшой трудностью: *{challenge.lower()}*.\n\n"
+            f"Однажды вечером, маленькая волшебная фея прилетела к его окошку, присела на край подушки и прошептала: "
+            f"«{child_name}, вся самая сильная магия уже находится внутри твоего доброго сердца! Ты гораздо сильнее и смелее, чем тебе кажется».\n\n"
+            f"С той самой ночи {child_name} сладко засыпал с улыбкой на лице, зная, что со всеми трудностями он обязательно справится. Конец волшебной сказки. 🌙"
+        )
         
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
-    if platform_type == "Google Maps / Yelp / TripAdvisor":
-        system_instruction = (
-            f"You are the elite head of communications for a business. Write a charismatic, persuasive, brand reply to a customer review in English. "
-            f"Tone: {tone}. Keep it concise (2-4 sentences). Never mention AI or automation."
-        )
-    else:
-        system_instruction = (
-            f"You are a charismatic, high-energy YouTube Creator. Write a catchy conversational reply to a fan comment in English. "
-            f"Tone: {tone}. Use 1-2 emojis naturally. Never mention AI. Keep it short (1-3 sentences)."
-        )
+    # Профессиональная инструкция для детского психолога-сказочника
+    system_instruction = (
+        "You are a compassionate child psychologist and a master storyteller for kids. "
+        "Your goal is to write a warm, beautifully structured therapeutic bedtime story based on the user's inputs. "
+        "The story MUST be written in the same language as the child's name provided (If Russian name -> write in Russian, if English name -> write in English). "
+        "Rules:\n"
+        "1. Never use technical, AI, or corporate words. Sound 100% like a loving human writer.\n"
+        "2. Make the child the main character who gracefully learns a lesson or overcomes a fear through a gentle metaphor.\n"
+        "3. The story must feel deeply safe, cozy, comforting, and have a beautiful happy ending.\n"
+        "4. Keep it concise but magical (approx. 250-400 words), ideal for reading aloud before bed."
+    )
+    
+    user_content = (
+        f"Write a cozy bedtime story for a child named {child_name}, age {child_age}. "
+        f"The story takes place in: {setting}. "
+        f"The theme to gently guide the child through is: {challenge}."
+    )
     
     data = {
         "model": "google/gemini-2.5-flash:free",
         "messages": [
             {"role": "system", "content": system_instruction},
-            {"role": "user", "content": f"Target text to reply to: '{target_text}'"}
+            {"role": "user", "content": user_content}
         ]
     }
         
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=7)
+        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
         if response.status_code == 200:
             result = response.json()
             return result['choices']['message']['content'].strip()
         else:
-            return get_fallback_reply(platform_type, tone)
+            return "Ой, волшебная книга закрылась от сильного ветра. Пожалуйста, нажмите кнопку создания еще раз! 🪄"
     except Exception:
-        return get_fallback_reply(platform_type, tone)
-# --- 1. ПЕРВЫЙ ЭКРАН (HERO SECTION) ---
-st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>Turn Reviews & Comments into Loyal Fans. In 1 Click.</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; color: #4B5563;'>Generate charismatic brand replies for Google Maps, Yelp, and YouTube in 3 seconds.</h3>", unsafe_allow_html=True)
-
-st.write("---")
-
-
-# --- 2. БЛОК С ТАРИФАМИ (PRICING) НАВЕРХУ ---
-st.markdown("<h3 style='text-align: center; color: #1F2937;'>Choose Your Growth Plan</h3>", unsafe_allow_html=True)
-
-p_col1, p_col2, p_col3 = st.columns(3)
-
-with p_col1:
-    with st.container(border=True):
-        st.subheader("Free Trial")
-        st.markdown("## $0")
-        st.write("• 3 free text generations")
-        st.write("• Core writing styles")
-        st.button("Start Free", key="btn_free", use_container_width=True)
-
-with p_col2:
-    with st.container(border=True):
-        st.subheader("Starter Pack")
-        st.markdown("## $39/mo")
-        st.write("• 300 ready replies")
-        st.write("• Maps & YouTube engines")
-        st.button("Get Starter", key="btn_starter", use_container_width=True)
-
-with p_col3:
-    with st.container(border=True):
-        st.subheader("Creator Pro")
-        st.markdown("## $89/mo")
-        st.write("• Unlimited generations")
-        st.write("• Custom slang & brand setup")
-        st.button("Get Pro", key="btn_biz", type="primary", use_container_width=True)
-
-st.write("---")
-
-
-# --- 3. ИНТЕРАКТИВНЫЙ МУЛЬТИПЛАТФОРМЕННЫЙ ГЕНЕРАТОР ---
-st.markdown("### ✍️ Test the Multi-Platform Generator")
-
-platform = st.segmented_control(
-    "Select Target Platform:",
-    options=["Google Maps / Yelp / TripAdvisor", "YouTube Comments"],
-    default="Google Maps / Yelp / TripAdvisor"
-)
+        return "Сказочная пыль еще укладывается. Пожалуйста, попробуйте нажать кнопку еще один раз!"
+# --- 1. КРАСИВЫЙ ЗАГОЛОВОК САЙТА ---
+st.markdown("<h1 style='text-align: center; color: #4F46E5; margin-bottom: 0;'>🔮 MagicTales</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #4B5563; font-size: 18px; margin-top: 5px;'>Создайте уникальную терапевтическую сказку для вашего малыша</p>", unsafe_allow_html=True)
 
 st.write("")
 
-if platform == "Google Maps / Yelp / TripAdvisor":
-    preset_reviews = {
-        "Custom Text (Type below)": "",
-        "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
-        "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
-    }
-else:
-    preset_reviews = {
-        "Custom Text (Type below)": "",
-        "🔥 Fan Praise Comment": "Man, this video editing is next level! Thanks for making this tutorial, it helped me so much with my project.",
-        "🧐 Critical Comment": "The info is good but you talked too fast in the middle section. Had to slow down the playback to get it."
-    }
+# --- 2. ПРОСТАЯ И ПОНЯТНАЯ ФОРМА ВВОДА ---
+# Оборачиваем форму в рамку, чтобы она смотрелась аккуратно
+with st.container(border=True):
+    st.markdown("##### 📝 Заполните всего 4 простых поля:")
+    
+    child_name = st.text_input("Как зовут вашего ребёнка?", placeholder="Например: Лео, София, Максим", max_chars=20)
+    
+    child_age = st.slider("Сколько лет вашему малышу?", min_value=2, max_value=10, value=5)
+    
+    setting = st.selectbox(
+        "Где будет происходить действие сказки?",
+        ["В затерянном волшебном лесу", "На далекой космической станции", "В секретном подводном королевстве", "В уютном замке на мягком облаке", "В долине добрых динозавров"]
+    )
+    
+    challenge = st.selectbox(
+        "Какую тему или каприз мы хотим мягко решить?",
+        [
+            "Боязнь темноты и ночных монстров", 
+            "Нежелание ложиться спать вовремя", 
+            "Неумение делиться своими игрушками", 
+            "Сложная адаптация и страх перед детским садиком",
+            "Частые вспышки злости, обиды или капризы"
+        ]
+    )
 
-selected_preset = st.selectbox("Choose a sample input:", list(preset_reviews.keys()))
+st.write("")
 
-if selected_preset != "Custom Text (Type below)":
-    text_input = st.text_area("Source Text to Reply to:", value=preset_reviews[selected_preset], height=100)
-else:
-    placeholder_text = "Paste maps review plain text here..." if platform == "Google Maps / Yelp / TripAdvisor" else "Paste YouTube plain comment text here..."
-    text_input = st.text_area("Source Text to Reply to:", placeholder=placeholder_text, height=100)
-
-tone_choice = st.radio(
-    "Select your Vibe / Tone of Voice:",
-    ["Friendly", "Professional", "Witty"],
-    horizontal=True
-)
-
-if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
-    if not text_input.strip():
-        st.warning("Please enter or select some text first!")
+# Кнопка запуска
+if st.button("Создать волшебную сказку ✨", use_container_width=True):
+    if not child_name.strip():
+        st.warning("Пожалуйста, введите имя вашего ребёнка, чтобы сказка получилась персональной!")
     else:
-        with st.spinner("Crafting your charismatic response..."):
-            result_text = generate_response(text_input, tone_choice, platform)
+        with st.spinner("Собираем волшебную пыль и пишем вашу сказку..."):
+            story_result = generate_magic_story(child_name, child_age, setting, challenge)
         
-        st.success("Done! Your response is ready to copy:")
-        st.code(result_text, language="text")
+        st.write("---")
+        st.markdown(f"### 📖 Ваша персональная история для {child_name}:")
         
-        if platform == "Google Maps / Yelp / TripAdvisor":
-            st.info("💡 Pro Tip: Fast responses boost your Local SEO maps discovery rank instantly.")
-        else:
-            st.info("💡 Pro Tip: Replying within 15 minutes triggers YouTube's algorithm to pump your video to more feeds.")
+        # Выводим сказку в красивом, чистом текстовом блоке без программного кода
+        with st.container(border=True):
+            st.markdown(story_result)
+            
+        st.write("")
+        st.success("✨ Готово! Прочитайте эту сказку вашему ребёнку сегодня перед сном спокойным, мягким голосом.")
 
 st.write("---")
-
-
-# --- 4. БЛОК БОЛИ И ПРЕИМУЩЕСТВ ---
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("#### 💔 The Routine Dragging You Down")
-    st.markdown("- **Wasting hours** typing back to hundreds of comments and reviews manually.")
-    st.markdown("- **Killing engagement rates** because unanswered text drops your channel score.")
-    st.markdown("- **Sounding dry and boring** when trying to match your brand's true voice.")
-
-with col2:
-    st.markdown("#### 🔥 Why Creators & Brands Love ReviewBoss")
-    st.markdown("- **Dual-Engine Copywriting:** Instantly shifts styles between local business owner and high-energy video creator.")
-    st.markdown("- **No VPN Required:** Fast, stable, cloud-based text scripting worldwide.")
-    st.markdown("- **Algorithm Boost:** High response rates trigger rapid discovery on both Google and YouTube.")
-
-st.write("---")
-
-# --- 5. ФУТЕР ---
-st.markdown("<p style='text-align: center; color: #9CA3AF;'>No credit card required for trial. ReviewBoss 2026.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9CA3AF; font-size: 12px;'>MagicTales 2026. Сделано с любовью для заботливых родителей.</p>", unsafe_allow_html=True)
