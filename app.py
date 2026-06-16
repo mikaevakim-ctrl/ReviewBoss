@@ -68,82 +68,85 @@ st.markdown("<h3 style='text-align: center; color: #4B5563;'>Generate charismati
 st.write("---")
 
 
-# --- 2. БЛОК С ТАРИФАМИ (PRICING) — ТЕПЕРЬ НАВЕРХУ ДЛЯ НЕПОДПИСАННЫХ ---
+# --- 2. БЛОК С ТАРИФАМИ (PRICING) В КРАСИВЫХ РАМКАХ ---
 st.markdown("<h3 style='text-align: center; color: #1F2937;'>Choose Your Growth Plan</h3>", unsafe_allow_html=True)
 
 p_col1, p_col2, p_col3 = st.columns(3)
 
 with p_col1:
-    st.subheader("Free Trial")
-    st.markdown("## $0")
-    st.write("• 3 free text generations")  # Изменили лимит с 10 на 3
-    st.write("• Core writing styles")
-    st.button("Start Free", key="btn_free", use_container_width=True)
+    with st.container(border=True):
+        st.subheader("Free Trial")
+        st.markdown("## $0")
+        st.write("• 3 free text generations")
+        st.write("• Core writing styles")
+        st.button("Start Free", key="btn_free", use_container_width=True)
 
 with p_col2:
-    st.subheader("Starter")
-    st.markdown("## $29/mo")
-    st.write("• Up to 200 ready replies")
-    st.write("• All writing styles")
-    st.button("Get Starter", key="btn_starter", use_container_width=True)
+    with st.container(border=True):
+        st.subheader("Starter")
+        st.markdown("## $29/mo")
+        st.write("• Up to 200 ready replies")
+        st.write("• All writing styles")
+        st.button("Get Starter", key="btn_starter", use_container_width=True)
 
 with p_col3:
-    st.subheader("Business")
-    st.markdown("## $79/mo")
-    st.write("• Unlimited generations")
-    st.write("• Custom brand setup")
-    st.button("Get Business", key="btn_biz", type="primary", use_container_width=True)
+    with st.container(border=True):
+        st.subheader("Business")
+        st.markdown("## $79/mo")
+        st.write("• Unlimited generations")
+        st.write("• Custom brand setup")
+        st.button("Get Business", key="btn_biz", type="primary", use_container_width=True)
 
 st.write("---")
 
 
-# --- 3. ИНТЕРАКТИВНЫЙ ГЕНЕРАТОР ---
-st.markdown("### ✍️ Test the Smart Reply Generator")
-st.write("Pick a real client review or type your own to see how it instantly transforms into a charismatic copy:")
+# --- 3. ГЛАВНЫЙ БЛОК: ГЕНЕРАТОР СЛЕВА, ТЕКСТ СПРАВА ---
+main_col1, main_col2 = st.columns([1.2, 1.0], gap="large")
 
-preset_reviews = {
-    "Custom Text (Type below)": "",
-    "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
-    "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
-}
+# ЛЕВАЯ КОЛОНКА: ИНТЕРАКТИВНЫЙ ГЕНЕРАТОР
+with main_col1:
+    st.markdown("### ✍️ Test the Smart Reply Generator")
+    st.write("Pick a sample review or type your own:")
 
-selected_preset = st.selectbox("Choose a sample review:", list(preset_reviews.keys()))
+    preset_reviews = {
+        "Custom Text (Type below)": "",
+        "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
+        "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
+    }
 
-if selected_preset != "Custom Text (Type below)":
-    review_input = st.text_area("Client Review Text:", value=preset_reviews[selected_preset], height=100)
-else:
-    review_input = st.text_area("Client Review Text:", placeholder="Paste your client's review here...", height=100)
+    selected_preset = st.selectbox("Choose a sample review:", list(preset_reviews.keys()))
 
-tone_choice = st.radio(
-    "Select your Brand Tone of Voice:",
-    ["Friendly", "Professional", "Witty"],
-    horizontal=True
-)
-
-if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
-    if not review_input.strip():
-        st.warning("Please enter or select a review first!")
+    if selected_preset != "Custom Text (Type below)":
+        review_input = st.text_area("Client Review Text:", value=preset_reviews[selected_preset], height=100)
     else:
-        with st.spinner("Crafting your charismatic response..."):
-            result_text = generate_review_reply(review_input, tone_choice)
-        
-        st.success("Done! Your brand response is ready to copy:")
-        st.code(result_text, language="text")
-        st.info("💡 Pro Tip: Fast and engaging replies like this boost your Google Maps local SEO ranking instantly.")
+        review_input = st.text_area("Client Review Text:", placeholder="Paste your client's review here...", height=100)
 
-st.write("---")
+    tone_choice = st.radio(
+        "Select your Brand Tone of Voice:",
+        ["Friendly", "Professional", "Witty"],
+        horizontal=True
+    )
 
+    if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
+        if not review_input.strip():
+            st.warning("Please enter or select a review first!")
+        else:
+            with st.spinner("Crafting your charismatic response..."):
+                result_text = generate_review_reply(review_input, tone_choice)
+            
+            st.success("Done! Your brand response is ready to copy:")
+            st.code(result_text, language="text")
 
-# --- 4. БЛОК БОЛИ И ПРЕИМУЩЕСТВ ---
-col1, col2 = st.columns(2)
-
-with col1:
+# ПРАВАЯ КОЛОНКА: РУТИНА И ПРЕИМУЩЕСТВА (СТРОКИ С БОКОВ)
+with main_col2:
+    st.write("##") # Небольшой отступ сверху для выравнивания
     st.markdown("#### 💔 The Routine Dragging You Down")
     st.markdown("- **Wasting hours** staring at a blank screen trying to find the right words.")
     st.markdown("- **Losing local rankings** in search maps due to slow or ignored feedback.")
     st.markdown("- **Sounding dry and boring** like a rigid, outdated corporate machine.")
-
-with col2:
+    
+    st.write("") # Разделительный отступ между блоками
+    
     st.markdown("#### 🔥 Why Local Businesses Love ReviewBoss")
     st.markdown("- **Charismatic Copywriting:** Scripts instantly adapt to your specific business vibe.")
     st.markdown("- **No VPN Required:** Runs lightning-fast and stable from anywhere in the world.")
@@ -152,5 +155,6 @@ with col2:
 st.write("---")
 
 
-# --- 5. ФУТЕР ---
+# --- 4. ФУТЕР ---
 st.markdown("<p style='text-align: center; color: #9CA3AF;'>No credit card required for trial. Setup takes 30 seconds. ReviewBoss 2026.</p>", unsafe_allow_html=True)
+
