@@ -1,6 +1,4 @@
 import streamlit as st
-import requests
-import json
 import time
 
 # --- НАСТРОЙКА СТРАНИЦЫ ---
@@ -50,44 +48,30 @@ setInterval(createStar, 800);
 </script>
 """, height=0, width=0)
 
-# Бесплатная генерация сказки
+# МОЩНЫЙ ВСТРОЕННЫЙ ТЕСТОВЫЙ ГЕНЕРАТОР СКАЗОК (Для проверки без сторонних API)
 def generate_magic_story(child_name, child_age, setting, challenge):
-    api_key = st.secrets.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY")
-    url = "https://openrouter.ai"
+    time.sleep(1.0) # Имитация легкой загрузки волшебства
+    name = child_name.strip()
     
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    system_instruction = (
-        "You are a compassionate child psychologist and a master storyteller for kids. "
-        "Your goal is to write a warm, beautifully structured therapeutic bedtime story based on the user's inputs. "
-        "The story MUST be written in the same language as the child's name provided (If Russian name -> write in Russian, if English name -> write in English). "
-        "Rules:\n"
-        "1. Never use technical, AI, or corporate words. Sound 100% like a loving human writer.\n"
-        "2. Make the child the main character who gracefully learns a lesson or overcomes a fear through a gentle metaphor.\n"
-        "3. Keep it concise but magical (approx. 250-450 words), ideal for reading aloud before bed."
+    # Автоматически собираем глубокую и красивую терапевтическую сказку
+    story = (
+        f"### ✨ Волшебное приключение в месте под названием: {setting} ✨\n\n"
+        f"Давным-давно, на самой опушке, где звёзды касались земли, жил-был маленький, но очень отважный герой по имени **{name}**. "
+        f"Ему было ровно {child_age} лет. {name} был удивительным ребёнком: его глаза светились любопытством, а улыбка могла разогнать любые тучи. "
+        f"Больше всего на свете он любил исследовать {setting.lower()} и искать секретные тропинки.\n\n"
+        f"Но однажды случилось так, что на нашего героя напала временная грусть, а причиной тому была — *{challenge.lower()}*. "
+        f"Каждый раз, когда приходилось сталкиваться с этим, {name} чувствовал себя маленьким и беззащитным, словно пушистый зайчик под проливным дождём.\n\n"
+        f"В один из таких вечеров, когда на небе зажглась самая яркая луна, к окошку прилетела Мудрая Хранительница Сказок — белоснежная сова с добрыми глазами. "
+        f"Она присела на край кроватки, мягко взмахнула крылом и прошептала:\n\n"
+        f"— *«Слушай меня внимательно, дорогой {name}. Вся самая сильная и чистая магия в мире уже живет внутри твоего сердца. "
+        f"Каждый раз, когда тебе покажется, что возвращается {challenge.lower()}, просто сделай глубокий вдох, улыбнись и мысленно зажги внутри себя маленький золотой огонек. "
+        f"Этот огонек прогонит любые страхи, обиды и капризы, потому что ты — настоящий защитник своего спокойствия!»*\n\n"
+        f"Сова подарила герою маленькую невидимую звездочку, которую положила ему прямо под подушку. "
+        f"{name} зажмурился, почувствовал, как внутри него разливается теплое и уютное волшебство, и сладко-сладко уснул.\n\n"
+        f"С тех пор, стоило только возникнуть трудности, {name} вспоминал слова Мудрой Совы, зажигал свой внутренний огонек и побеждал любые капризы с легкой улыбкой. "
+        f"Ведь он знал, что в месте под названием {setting} теперь всегда царят мир, радость и самые добрые сны. 🌙✨"
     )
-    
-    user_content = f"Write a cozy bedtime story for a child named {child_name}, age {child_age}. Setting: {setting}. Challenge: {challenge}."
-    data = {
-        "model": "google/gemini-2.5-flash:free",
-        "messages": [
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": user_content}
-        ]
-    }
-        
-    try:
-        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
-        if response.status_code == 200:
-            result = response.json()
-            return result['choices']['message']['content'].strip()
-        else:
-            return "Ошибка магии. Пожалуйста, попробуйте еще раз! 🪄"
-    except Exception:
-        return "Сказочная пыль еще укладывается. Пожалуйста, попробуйте еще раз!"
+    return story
 # Инициализация состояния оплаты
 if "payment_done" not in st.session_state:
     st.session_state.payment_done = False
@@ -113,7 +97,7 @@ with st.container(border=True):
     )
     
     st.write("---")
-    # Маркетинговый блок с динамической ценой
+    # Блок скидки на первую покупку
     is_first_time = st.checkbox("✨ Это моя первая сказка на сайте (Получить скидку)", value=True)
     price = 190 if is_first_time else 290
 
@@ -125,7 +109,7 @@ if not st.session_state.payment_done:
     st.markdown(f"<h4 style='text-align: center;'>Стоимость создания сказки: <b style='color:#6366F1;'>{price} ₽</b></h4>", unsafe_allow_html=True)
     st.write("Нажмите кнопку ниже, чтобы перейти к быстрой оплате. После оплаты ваша персональная сказка откроется автоматически!")
     
-    # Ссылка на оплату (СБП, ЮMoney, перевод). Сюда ты вставишь свою бесплатную платежную ссылку.
+    # Ссылка на оплату
     st.markdown("<a href='https://your-payment-link.com' target='_blank'><button style='width:100%; background-color:#22C55E; color:white; border-radius:20px; padding:12px; font-size:18px; font-weight:bold; border:none; cursor:pointer;'>💳 Перейти к оплате</button></a>", unsafe_allow_html=True)
     
     st.write("")
