@@ -10,6 +10,52 @@ st.set_page_config(
     layout="centered"
 )
 
+# --- АНИМАЦИЯ ПАДАЮЩИХ ОТЗЫВОВ НА ЗАДНЕМ ФОНЕ ---
+animation_html = """
+<div id="snow-container" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:-1; overflow:hidden; background: transparent;"></div>
+<script>
+const container = document.getElementById('snow-container');
+const emojis = ['⭐️', '💬', '✨', '👍', '❤️', '🔔', '🍕', '🏨', '☕️', '🌟'];
+
+function createDroplet() {
+    const droplet = document.createElement('div');
+    droplet.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+    droplet.style.position = 'absolute';
+    droplet.style.top = '-50px';
+    droplet.style.left = Math.random() * 100 + 'vw';
+    
+    // Случайный размер и скорость для эффекта глубины
+    const size = Math.random() * 20 + 15;
+    const duration = Math.random() * 8 + 5; 
+    const opacity = Math.random() * 0.4 + 0.1; // Полупрозрачные, чтобы не мешать тексту
+    
+    droplet.style.fontSize = size + 'px';
+    droplet.style.transition = `transform ${duration}s linear, opacity ${duration}s linear`;
+    droplet.style.opacity = opacity;
+    
+    container.appendChild(droplet);
+    
+    // Запускаем падение с легким покачиванием вбок
+    setTimeout(() => {
+        const drift = (Math.random() * 100 - 50);
+        droplet.style.transform = `translateY(110vh) translateX(${drift}px) rotate(${Math.random() * 360}deg)`;
+        droplet.style.opacity = '0';
+    }, 100);
+    
+    // Удаляем элемент после завершения анимации
+    setTimeout(() => {
+        droplet.remove();
+    }, duration * 1000 + 100);
+}
+
+// Создаем новые падающие иконки каждые 600 миллисекунд
+setInterval(createDroplet, 600);
+</script>
+"""
+# Внедряем HTML/JS анимацию в фон
+st.components.v1.html(animation_html, height=0, width=0)
+
+
 # --- ДВИЖОК КОПИРАЙТИНГА ---
 def generate_review_reply(review_text, tone):
     api_key = st.secrets.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY")
@@ -68,7 +114,7 @@ st.markdown("<h3 style='text-align: center; color: #4B5563;'>Generate charismati
 st.write("---")
 
 
-# --- 2. БЛОК С ТАРИФАМИ (PRICING) В КРАСИВЫХ РАМКАХ ---
+# --- 2. БЛОК С ТАРИФАМИ (PRICING) НАВЕРХУ ---
 st.markdown("<h3 style='text-align: center; color: #1F2937;'>Choose Your Growth Plan</h3>", unsafe_allow_html=True)
 
 p_col1, p_col2, p_col3 = st.columns(3)
@@ -100,53 +146,53 @@ with p_col3:
 st.write("---")
 
 
-# --- 3. ГЛАВНЫЙ БЛОК: ГЕНЕРАТОР СЛЕВА, ТЕКСТ СПРАВА ---
-main_col1, main_col2 = st.columns([1.2, 1.0], gap="large")
+# --- 3. ИНТЕРАКТИВНЫЙ ГЕНЕРАТОР ---
+st.markdown("### ✍️ Test the Smart Reply Generator")
+st.write("Pick a real client review or type your own to see how it instantly transforms into a charismatic copy:")
 
-# ЛЕВАЯ КОЛОНКА: ИНТЕРАКТИВНЫЙ ГЕНЕРАТОР
-with main_col1:
-    st.markdown("### ✍️ Test the Smart Reply Generator")
-    st.write("Pick a sample review or type your own:")
+preset_reviews = {
+    "Custom Text (Type below)": "",
+    "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
+    "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
+}
 
-    preset_reviews = {
-        "Custom Text (Type below)": "",
-        "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
-        "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
-    }
+selected_preset = st.selectbox("Choose a sample review:", list(preset_reviews.keys()))
 
-    selected_preset = st.selectbox("Choose a sample review:", list(preset_reviews.keys()))
+if selected_preset != "Custom Text (Type below)":
+    review_input = st.text_area("Client Review Text:", value=preset_reviews[selected_preset], height=100)
+else:
+    review_input = st.text_area("Client Review Text:", placeholder="Paste your client's review here...", height=100)
 
-    if selected_preset != "Custom Text (Type below)":
-        review_input = st.text_area("Client Review Text:", value=preset_reviews[selected_preset], height=100)
+tone_choice = st.radio(
+    "Select your Brand Tone of Voice:",
+    ["Friendly", "Professional", "Witty"],
+    horizontal=True
+)
+
+if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
+    if not review_input.strip():
+        st.warning("Please enter or select a review first!")
     else:
-        review_input = st.text_area("Client Review Text:", placeholder="Paste your client's review here...", height=100)
+        with st.spinner("Crafting your charismatic response..."):
+            result_text = generate_review_reply(review_input, tone_choice)
+        
+        st.success("Done! Your brand response is ready to copy:")
+        st.code(result_text, language="text")
+        st.info("💡 Pro Tip: Fast and engaging replies like this boost your Google Maps local SEO ranking instantly.")
 
-    tone_choice = st.radio(
-        "Select your Brand Tone of Voice:",
-        ["Friendly", "Professional", "Witty"],
-        horizontal=True
-    )
+st.write("---")
 
-    if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
-        if not review_input.strip():
-            st.warning("Please enter or select a review first!")
-        else:
-            with st.spinner("Crafting your charismatic response..."):
-                result_text = generate_review_reply(review_input, tone_choice)
-            
-            st.success("Done! Your brand response is ready to copy:")
-            st.code(result_text, language="text")
 
-# ПРАВАЯ КОЛОНКА: РУТИНА И ПРЕИМУЩЕСТВА (СТРОКИ С БОКОВ)
-with main_col2:
-    st.write("##") # Небольшой отступ сверху для выравнивания
+# --- 4. БЛОК БОЛИ И ПРЕИМУЩЕСТВ ---
+col1, col2 = st.columns(2)
+
+with col1:
     st.markdown("#### 💔 The Routine Dragging You Down")
     st.markdown("- **Wasting hours** staring at a blank screen trying to find the right words.")
     st.markdown("- **Losing local rankings** in search maps due to slow or ignored feedback.")
     st.markdown("- **Sounding dry and boring** like a rigid, outdated corporate machine.")
-    
-    st.write("") # Разделительный отступ между блоками
-    
+
+with col2:
     st.markdown("#### 🔥 Why Local Businesses Love ReviewBoss")
     st.markdown("- **Charismatic Copywriting:** Scripts instantly adapt to your specific business vibe.")
     st.markdown("- **No VPN Required:** Runs lightning-fast and stable from anywhere in the world.")
@@ -155,6 +201,5 @@ with main_col2:
 st.write("---")
 
 
-# --- 4. ФУТЕР ---
+# --- 5. ФУТЕР ---
 st.markdown("<p style='text-align: center; color: #9CA3AF;'>No credit card required for trial. Setup takes 30 seconds. ReviewBoss 2026.</p>", unsafe_allow_html=True)
-
