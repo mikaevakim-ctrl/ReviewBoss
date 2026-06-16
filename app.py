@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import json
 import time
-from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_RECENT
 
 # --- НАСТРОЙКА СТРАНИЦЫ ---
 st.set_page_config(
@@ -50,7 +49,7 @@ setInterval(createDroplet, 600);
 """
 st.components.v1.html(animation_html, height=0, width=0)
 
-# --- УМНЫЙ ДВИЖОК КОПИРАЙТИНГА С ИНТЕГРАЦИЕЙ YOUTUBE ---
+# --- УМНЫЙ ДВИЖОК КОПИРАЙТИНГА ---
 def generate_response(text_input, tone, platform_type):
     api_key = st.secrets.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY")
     url = "https://openrouter.ai"
@@ -62,30 +61,11 @@ def generate_response(text_input, tone, platform_type):
     
     target_text = text_input.strip()
     
-    # ЕСЛИ ВЫБРАНЫ КАРТЫ: Блокируем ссылки, требуем копировать текст руками
-    if platform_type == "Google Maps / Yelp / TripAdvisor":
-        if "http://" in target_text or "https://" in target_text:
-            return "⚠️ Security Notice: Maps platforms require direct text input due to security firewalls. Please copy and paste the plain review text here."
-    
-    # ЕСЛИ ВЫБРАН YOUTUBE: Автоматически скачиваем свежий комментарий по ссылке
-    else:
-        if "://youtube.com" in target_text or "youtu.be/" in target_text:
-            try:
-                downloader = YoutubeCommentDownloader()
-                comments = downloader.get_comments_from_url(target_text, sort_by=SORT_BY_RECENT)
-                first_comment = next(comments, None)
-                
-                if first_comment and 'text' in first_comment:
-                    target_text = first_comment['text']
-                    st.toast(f"📥 Successfully fetched latest comment: \"{target_text[:40]}...\"")
-                else:
-                    return "Error: No public comments found on this YouTube video."
-            except Exception:
-                return "Error: Could not extract comments from this URL. Make sure the video is public."
-        elif "http://" in target_text or "https://" in target_text:
-            return "⚠️ Please paste a valid YouTube video link or type a plain comment."
+    # Защита от ввода ссылок
+    if "http://" in target_text or "https://" in target_text or "www." in target_text:
+        return "⚠️ Please paste the plain text of the review or comment. Direct links are restricted due to platform firewalls."
 
-    # Настройка скрытых инструкций для стабильной модели Google Gemini
+    # Настройка инструкций под платформу
     if platform_type == "Google Maps / Yelp / TripAdvisor":
         system_instruction = (
             f"You are the elite head of communications and brand reputation for a top-tier business. "
@@ -135,7 +115,6 @@ st.markdown("<h3 style='text-align: center; color: #4B5563;'>Generate charismati
 
 st.write("---")
 
-
 # --- 2. БЛОК С ТАРИФАМИ (PRICING) НАВЕРХУ ---
 st.markdown("<h3 style='text-align: center; color: #1F2937;'>Choose Your Growth Plan</h3>", unsafe_allow_html=True)
 
@@ -167,7 +146,6 @@ with p_col3:
 
 st.write("---")
 
-
 # --- 3. ИНТЕРАКТИВНЫЙ МУЛЬТИПЛАТФОРМЕННЫЙ ГЕНЕРАТОР ---
 st.markdown("### ✍️ Test the Multi-Platform Generator")
 
@@ -181,24 +159,24 @@ st.write("")
 
 if platform == "Google Maps / Yelp / TripAdvisor":
     preset_reviews = {
-        "Custom Text / Video URL (Type below)": "",
+        "Custom Text (Type below)": "",
         "🍕 5-Star Restaurant Review": "The pizza was absolutely amazing! Friendly staff and fast service. Will definitely come back next week.",
         "⭐️ 1-Star Hotel Review": "The room was noisy and the AC didn't work properly. Very disappointed with the service for this price."
     }
 else:
     preset_reviews = {
-        "Custom Text / Video URL (Type below)": "",
+        "Custom Text (Type below)": "",
         "🔥 Fan Praise Comment": "Man, this video editing is next level! Thanks for making this tutorial, it helped me so much with my project.",
         "🧐 Critical Comment": "The info is good but you talked too fast in the middle section. Had to slow down the playback to get it."
     }
 
 selected_preset = st.selectbox("Choose a sample input:", list(preset_reviews.keys()))
 
-if selected_preset != "Custom Text / Video URL (Type below)":
-    text_input = st.text_area("Source Text or YouTube URL to Reply to:", value=preset_reviews[selected_preset], height=100)
+if selected_preset != "Custom Text (Type below)":
+    text_input = st.text_area("Source Text to Reply to:", value=preset_reviews[selected_preset], height=100)
 else:
-    placeholder_text = "Paste maps review here..." if platform == "Google Maps / Yelp / TripAdvisor" else "Paste YouTube Video Link OR plain comment text here..."
-    text_input = st.text_area("Source Text or YouTube URL to Reply to:", placeholder=placeholder_text, height=100)
+    placeholder_text = "Paste maps review plain text here..." if platform == "Google Maps / Yelp / TripAdvisor" else "Paste YouTube plain comment text here..."
+    text_input = st.text_area("Source Text to Reply to:", placeholder=placeholder_text, height=100)
 
 tone_choice = st.radio(
     "Select your Vibe / Tone of Voice:",
@@ -208,7 +186,7 @@ tone_choice = st.radio(
 
 if st.button("Generate Smart Reply ✨", type="primary", use_container_width=True):
     if not text_input.strip():
-        st.warning("Please enter or select some text/URL first!")
+        st.warning("Please enter or select some text first!")
     else:
         with st.spinner("Crafting your charismatic response..."):
             result_text = generate_response(text_input, tone_choice, platform)
@@ -222,7 +200,6 @@ if st.button("Generate Smart Reply ✨", type="primary", use_container_width=Tru
             st.info("💡 Pro Tip: Replying within 15 minutes triggers YouTube's algorithm to pump your video to more feeds.")
 
 st.write("---")
-
 
 # --- 4. БЛОК БОЛИ И ПРЕИМУЩЕСТВ ---
 col1, col2 = st.columns(2)
